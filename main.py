@@ -37,8 +37,8 @@ def main():
 
     resultadoImportes = buscar_importes(lineas)
 
-    print(resultadoImportes)
+    print(*resultadoImportes, sep = "\n")
 
     resultadoArticulos = buscar_articulos(lineas)
-    print(resultadoArticulos)
+    print(*resultadoArticulos, sep = "\n" )
 main()

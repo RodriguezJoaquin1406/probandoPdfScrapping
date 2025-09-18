@@ -2,7 +2,8 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
 ### PDFS ###
-/facturas/*.zip
+*.pdf
+
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

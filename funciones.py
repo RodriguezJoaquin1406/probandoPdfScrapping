@@ -72,7 +72,7 @@ def buscar_importes(Lineas):
             razon = Lineas[i].texto.replace(" $", "")
             monto= Lineas[i+1].texto
             if(monto != "0,00"):
-                montoDic = dict( razon =  razon, monto = monto)
+                montoDic = dict( importe = razon.replace("importe",""), Monto = monto)
                 montos.append(montoDic) 
         i = i + 1
 
