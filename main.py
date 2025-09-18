@@ -1,12 +1,13 @@
-from funciones import limpiar_renglones_repetidos_texto, lineas_repetidas
+from funciones import buscar_importes, lineas_repetidas, normalizar_texto, buscar_articulos
 import fitz  # PyMuPDF
 import os
 import re
 from claseLinea import Linea
 
+    
 def main():
     nombre_archivo = input("Ingrese el nombre del archivo PDF (con extensión .pdf): ")
-
+    
     if not os.path.isfile(nombre_archivo):
         print(f"El archivo '{nombre_archivo}' no existe en el directorio actual.")
         return
@@ -21,7 +22,7 @@ def main():
 
     texto_completo = ""
     for pagina in documento:
-        texto_completo += pagina.get_text()
+        texto_completo += normalizar_texto(pagina.get_text())
         
     
     i=0
@@ -34,6 +35,10 @@ def main():
     documento.close()
     lineas = lineas_repetidas(lineas)
 
-    for linea in lineas:
-        print(linea)
+    resultadoImportes = buscar_importes(lineas)
+
+    print(resultadoImportes)
+
+    resultadoArticulos = buscar_articulos(lineas)
+    print(resultadoArticulos)
 main()
