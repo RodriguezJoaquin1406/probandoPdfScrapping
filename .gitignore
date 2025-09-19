@@ -3,7 +3,8 @@
 
 ### PDFS ###
 *.pdf
-*.txt
+anotacion.txt
+facturas.zip
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

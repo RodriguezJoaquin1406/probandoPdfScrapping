@@ -1,4 +1,4 @@
-from archivo import parsearPDF
+from archivo import abrirPDF as parsearPDF
     
 def main():
     
