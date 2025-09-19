@@ -25,6 +25,25 @@ def lineas_repetidas(Lineas):
     acomodar_indices(lineas_unicas)
     return lineas_unicas
 
+def eliminar_repetidos(lista):
+    unicas = []
+    unicas = []
+
+    if not lista:
+        return lista, unicas
+
+    # Siempre guardamos la primera
+    unicas.append(lista[0])
+
+    for i in range(1, len(lista)):
+        linea_actual = lista[i]
+        linea_anterior = lista[i - 1]
+
+        if linea_actual != linea_anterior:
+            unicas.append(linea_actual)
+        
+    return unicas
+
 def acomodar_indices(Lineas):
     """Reasigna los índices de las líneas en una lista de objetos Linea."""
     for i, linea in enumerate(Lineas):
@@ -40,58 +59,65 @@ def normalizar_texto(texto):
         normalize( "NFD", texto), 0, re.I
     )
 
+    texto = re.sub(r"\s*\$", "", texto)
+    
     return texto
 
 def encontrar_importes(Linea):
-    # Cabeceras de interés
-    claves = [
-        "importe otros tributos: $",
-        "importe neto gravado: $" ,
-        "iva 27%: $",
-        "iva 21%: $",
-        "iva 10.5%: $",
-        "iva 5%: $",
-        "iva 2.5%: $",
-        "importe total: $",
-        "iva 0%: $"
-    ]
-    
-    texto = Linea.texto
+    a = -1
+    patrones = {
+        1: re.compile(r"importe", re.IGNORECASE),
+        2: re.compile(r"iva\s*\d+", re.IGNORECASE),
+        3: re.compile(r"unidades", re.IGNORECASE),
+    }
 
-    if texto in claves:
-        return True
-    else:
-        return False
+    texto = Linea.texto.lower()
+
+    for codigo, regex in patrones.items():
+        if regex.search(texto):
+            a = codigo
+            return a
+
+    return a
+# 1 entonces encontro linea importe
+# 2 Encontro iva
+# 3 Encontro Articulos
 
 def buscar_importes(Lineas):
-    montos = []
+    resultados = []
 
-    i = 0
-    for linea in Lineas:
-        if(encontrar_importes(linea) and i > 0):
-            razon = Lineas[i].texto.replace(" $", "")
-            monto= Lineas[i+1].texto
-            if(monto != "0,00"):
-                montoDic = dict( importe = razon.replace("importe",""), Monto = monto)
-                montos.append(montoDic) 
-        i = i + 1
+    for i, linea in enumerate(Lineas):
+        resultadoBusqueda = encontrar_importes(linea)
 
-    return montos
+        if resultadoBusqueda == -1:
+            continue
 
-def buscar_articulos(Lineas):
-    articulos = []
+        if resultadoBusqueda == 1:  # Importe
+            if i + 1 < len(Lineas):
+                razon = linea.texto.replace("importe ", "").replace(" $", "")
+                monto = Lineas[i+1].texto.replace(" $", "")
+                resultados.append({"Importe": razon, "Monto": monto})
 
-    i = 0
-    for linea in Lineas:
-        if(linea.texto == "unidades"):
-            producto = Lineas[i-2].texto
-            cantidad = Lineas[i-1].texto
-            precioUnitario = Lineas[i+1].texto
-            subtotal = Lineas[i+3].texto
-            totaliva = Lineas[i+5].texto
-            articulosDic = dict(Articulo = producto, Cantidad = cantidad, Precio_Unitario = precioUnitario, Subtotal = subtotal, TotalIVA = totaliva)
-            articulos.append(articulosDic)
-        i = i + 1
-    
-    return articulos
-        
+        elif resultadoBusqueda == 2:  # IVA
+            if i + 1 < len(Lineas):
+                razon = linea.texto.replace("iva ", "").replace(" $", "")
+                monto = Lineas[i+1].texto.replace(" $", "")
+                resultados.append({"IVA": razon, "Monto": monto})
+
+        elif resultadoBusqueda == 3:  # Artículos
+            if i >= 2 and i + 5 < len(Lineas):
+                producto = Lineas[i-2].texto
+                cantidad = Lineas[i-1].texto
+                precioUnitario = Lineas[i+1].texto
+                subtotal = Lineas[i+3].texto
+                totaliva = Lineas[i+5].texto
+                resultados.append({
+                    "Articulo": producto,
+                    "Cantidad": cantidad,
+                    "Precio_Unitario": precioUnitario,
+                    "Subtotal": subtotal,
+                    "TotalIVA": totaliva
+                })
+
+    resultados = eliminar_repetidos(resultados)
+    return resultados

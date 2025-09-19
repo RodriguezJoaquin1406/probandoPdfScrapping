@@ -1,4 +1,4 @@
-from funciones import buscar_importes, lineas_repetidas, normalizar_texto, buscar_articulos
+from funciones import buscar_importes, lineas_repetidas, normalizar_texto
 import fitz  # PyMuPDF
 import os
 import re
@@ -22,8 +22,9 @@ def main():
 
     texto_completo = ""
     for pagina in documento:
-        texto_completo += normalizar_texto(pagina.get_text())
-        
+        texto_pagina = normalizar_texto(pagina.get_text())
+        if(texto_pagina.__contains__("duplicado") == False and texto_pagina.__contains__("triplicado")):
+            texto_completo += normalizar_texto(texto_pagina)
     
     i=0
     for linea in texto_completo.split('\n'):
@@ -35,10 +36,10 @@ def main():
     documento.close()
     lineas = lineas_repetidas(lineas)
 
+
     resultadoImportes = buscar_importes(lineas)
 
     print(*resultadoImportes, sep = "\n")
 
-    resultadoArticulos = buscar_articulos(lineas)
-    print(*resultadoArticulos, sep = "\n" )
+
 main()

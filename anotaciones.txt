@@ -1,0 +1,24 @@
+Tema IAs
+ver como se usan en python.
+Comprender teoricamente y como hacer herramientas
+
+Hacer que la ia haga cosas complejas
+
+Aprender a hacer buenos prompts 
+    Hacer que la ia sepa que es lo que le envio
+    Como quiero que procese y que cosas necesito
+    Hacer que sepa como quiero la informacion final
+
+Aprender a hacer conexiones api
+Despues de ver unos videitos
+Hacer conexiones con Gmail y Google Drive, Mediante Google Cloud 
+
+Google Cloud primero ver video de configurar api
+
+Make
+Ver como es la interaccion con scrips de python
+Aprender a usar bien modulos de Open Ai
+
+N8N
+PROBARlo
+
