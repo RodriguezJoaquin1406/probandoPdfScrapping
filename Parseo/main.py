@@ -1,9 +1,12 @@
-from archivo import abrirPDF as parsearPDF
-    
-def main():
-    
-    nombre_archivo = input("Ingrese nombre archivo PDF (con .pdf): ")
-    resultado = parsearPDF(nombre_archivo)
-    print(*resultado , sep = "\n")
+from archivo import abrirPDF
 
-main()
+def main():
+    nombre_archivo = input("Ingrese nombre archivo PDF (con .pdf): ")
+    resultado = abrirPDF(nombre_archivo)
+    if not resultado:
+        print("No se encontraron resultados o hubo un error al procesar el PDF.")
+        return
+    print(*resultado, sep="\n")
+
+if __name__ == "__main__":
+    main()

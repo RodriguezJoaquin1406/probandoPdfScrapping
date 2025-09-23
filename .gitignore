@@ -5,6 +5,8 @@
 *.pdf
 anotacion.txt
 facturas.zip
+credentials.json
+token.json
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
