@@ -3,7 +3,11 @@ import fitz  # PyMuPDF
 import os
 from claseLinea import Linea
 
-def abrirPDF(nombre_archivo):
+def abrirPDF(nombre_archivo, modo=2):
+    """
+    modo=1: solo factura original (primera página válida)
+    modo=2: todas las páginas válidas
+    """
     if not os.path.isfile(nombre_archivo):
         print(f"El archivo '{nombre_archivo}' no existe en el directorio actual.")
         return []
@@ -16,11 +20,20 @@ def abrirPDF(nombre_archivo):
 
     lineas = []
     texto_completo = ""
+
+    paginas_validas = []
     for pagina in documento:
         texto_pagina = normalizar_texto(pagina.get_text())
-        # Excluir páginas con "duplicado" o "triplicado"
         if "duplicado" not in texto_pagina and "triplicado" not in texto_pagina:
-            texto_completo += texto_pagina
+            paginas_validas.append(texto_pagina)
+
+    if modo == 1:
+        # Solo la primera página válida (original)
+        if paginas_validas:
+            texto_completo = paginas_validas[0]
+    else:
+        # Todas las páginas válidas
+        texto_completo = "".join(paginas_validas)
 
     for i, linea in enumerate(texto_completo.split('\n')):
         if linea.strip():  # Omitir líneas vacías
