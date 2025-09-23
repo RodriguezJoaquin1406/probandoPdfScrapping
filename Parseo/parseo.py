@@ -142,8 +142,7 @@ def abrirPDF(nombre_archivo, modo=2):
     resultadoImportes = buscar_importes(lineas)
     return resultadoImportes
 
-def main_parsear():
-    nombre_archivo = input("Ingrese nombre archivo PDF (con .pdf): ")
+def main_parsear(nombre_archivo):
     print("¿Qué desea procesar?")
     print("1. Solo la factura original (primera página válida)")
     print("2. Todas las páginas válidas")
@@ -161,6 +160,7 @@ def main_parsear():
         print("No se encontraron resultados o hubo un error al procesar el PDF.")
         return
     print(*resultado, sep="\n")
+
 
 if __name__ == "__main__":
     main_parsear()
