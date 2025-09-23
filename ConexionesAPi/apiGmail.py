@@ -125,13 +125,19 @@ def main_correos():
     i = 0
     for i,factura in enumerate(facturas):
         title = get_header(factura, 'Subject') 
-        print( str(i) + ' ' + title)
+        date = get_header(factura, 'Date')
+        fecha = date.split(',')[1].strip().split(' ')[0:4]
+        fecha = ' '.join(fecha)
+        print( str(i) + ' ' + title + ' ' + fecha)
     
     while True: 
         try:
             entrada_usuario = input("Ingrese numero del correo a procesar: ")
             eleccion = int(entrada_usuario)
-            break  
+            if 0 <= eleccion < len(facturas):
+              break  
+            else:
+              print(f"Por favor, ingrese un número entre 0 y {len(facturas)-1}.")
         except ValueError:
             print("Entrada no válida. Por favor, introduce solo números enteros.")
 
