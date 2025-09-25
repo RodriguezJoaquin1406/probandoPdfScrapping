@@ -71,9 +71,6 @@ def download_attachments(msg, service, save_dir='.'):
             print(f"Descargado: {filename}")
     return filename
 
-def already_exists(filename, directory):
-    return os.path.isfile(os.path.join(directory, filename))
-
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
@@ -143,6 +140,7 @@ def main_correos():
 
     archivo = download_attachments(facturas[eleccion], service)
 
+    
     return archivo
   
   except HttpError as error:

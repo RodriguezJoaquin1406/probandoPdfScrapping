@@ -3,6 +3,10 @@
 
 ### PDFS ###
 *.pdf
+*.txt
+*.json
+*.env
+.env
 anotacion.txt
 facturas.zip
 credentials.json

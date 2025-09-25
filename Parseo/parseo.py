@@ -1,3 +1,4 @@
+from datetime import datetime
 import fitz  # PyMuPDF
 import os
 import re
@@ -99,6 +100,27 @@ def buscar_importes(lineas):
     resultados = eliminar_repetidos(resultados)
     return resultados
 
+
+def delete_file(filename, directory):
+    try:
+        os.remove(os.path.join(directory, filename))
+        print(f"Eliminado: {filename}")
+    except Exception as e:
+        print(f"Error al eliminar {filename}: {e}")
+
+def export_to_txt(content, filename):
+    # Filename with date-time to avoid overwriting
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+    filename = f"{os.path.splitext(filename)[0]}_{timestamp}.txt"
+    
+    try:
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print(f"Exportado a: {filename}")
+    except Exception as e:
+        print(f"Error al exportar a {filename}: {e}")
+
+
 #Función principal para abrir y procesar el PDF
 
 def abrirPDF(nombre_archivo, modo=2):
@@ -156,6 +178,8 @@ def main_parsear(nombre_archivo):
         modo = 2
 
     resultado = abrirPDF(nombre_archivo, modo)
+    export_to_txt(str(resultado), "resultado.txt")
+    delete_file(nombre_archivo, ".")
     if not resultado:
         print("No se encontraron resultados o hubo un error al procesar el PDF.")
         return
