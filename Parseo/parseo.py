@@ -67,51 +67,100 @@ def encontrar_importes(linea):
             return codigo
     return a
 
-def buscar_importes(lineas):
+def buscar_importes(lineas, modo):
     resultados = []
     for i, linea in enumerate(lineas):
         resultadoBusqueda = encontrar_importes(linea)
         if resultadoBusqueda == -1:
             continue
-        if resultadoBusqueda == 1:  # Importe
+        if resultadoBusqueda == 1 and modo == "importes":  # Importe
             if i + 1 < len(lineas):
                 razon = linea.texto.replace("importe ", "").replace(" $", "")
                 monto = lineas[i+1].texto.replace(" $", "")
-                resultados.append({"Importe": razon, "Monto": monto})
-        elif resultadoBusqueda == 2:  # IVA
+                if monto != "0,00":
+                    resultados.append("Importe" + " " + razon + " " + "Monto:" + " " + monto)
+        elif resultadoBusqueda == 2 and modo == "importes":  # IVA
             if i + 1 < len(lineas):
                 razon = linea.texto.replace("iva ", "").replace(" $", "")
                 monto = lineas[i+1].texto.replace(" $", "")
-                resultados.append({"IVA": razon, "Monto": monto})
-        elif resultadoBusqueda == 3:  # Artículos
+                if monto != "0,00":
+                    resultados.append("IVA" + " " + razon + " " + "Monto:" + " " + monto)
+        elif resultadoBusqueda == 3 and modo == "articulos":  # Artículos
             if i >= 2 and i + 5 < len(lineas):
                 producto = lineas[i-2].texto
                 cantidad = lineas[i-1].texto
                 precioUnitario = lineas[i+1].texto
                 subtotal = lineas[i+3].texto
                 totaliva = lineas[i+5].texto
-                resultados.append({
-                    "Articulo": producto,
-                    "Cantidad": cantidad,
-                    "Precio_Unitario": precioUnitario,
-                    "Subtotal": subtotal,
-                    "TotalIVA": totaliva
-                })
+                resultados.append(
+                    "Articulo:" + " " +  producto + " " +
+                    "Cantidad:" + " " + cantidad + " " +
+                    "Precio_Unitario:" + " " + precioUnitario + " " +
+                    "Subtotal:" + " " + subtotal + " " +
+                    "TotalIVA:" + " " + totaliva
+                )
     resultados = eliminar_repetidos(resultados)
     return resultados
 
 
+def  encontrar_razon_social(linea):
+    a = -1
+    patrones = {
+        1: re.compile(r"original", re.IGNORECASE),
+        2: re.compile(r"condicion frente al iva:", re.IGNORECASE),
+    }
+    texto = linea.texto.lower()
+    for codigo, regex in patrones.items():
+        if regex.search(texto):
+            return codigo
+    return a
+
+def buscar_razon_social(lineas):
+    resultado= ""
+    encontroFactura = False
+    for i, linea in enumerate(lineas):
+        resultadoBusqueda = encontrar_razon_social(linea)
+        if resultadoBusqueda == -1:
+            continue
+        if resultadoBusqueda == 1:  # Razon Social
+            if i + 1 < len(lineas):
+                razon = lineas[i+1].texto
+                resultado += "razon social:" + " " + razon
+        elif resultadoBusqueda == 2:  # Caract Facturas
+            if i + 1 < len(lineas):
+                if not encontroFactura:
+                    fecha = lineas[i+3].texto
+                    encontroFactura = True
+                    resultado += "fecha:" + " " + fecha
+        
+                else:
+                    if encontroFactura == True:
+                        factura = lineas[i+2].texto
+                        factura += " "
+                        factura += lineas[i-4].texto
+                        resultado += "factura:" + " " + factura
+
+    return resultado
+
 def delete_file(filename, directory):
+    if __name__ == "__main__":
+        return
+    
     try:
         os.remove(os.path.join(directory, filename))
         print(f"Eliminado: {filename}")
     except Exception as e:
         print(f"Error al eliminar {filename}: {e}")
 
-def export_to_txt(content, filename):
+def export_to_txt(content, filename, unidades_o_articulos):
     # Filename with date-time to avoid overwriting
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
-    filename = f"{os.path.splitext(filename)[0]}_{timestamp}.txt"
+    filename = filename.replace("razon social: ", "")
+    filename = filename.replace("fecha: ", "")
+    filename = filename.replace("factura: ", "")
+    filename = filename.replace(" ", "_")
+    filename = filename.replace("/", "-")
+    filename += "_" + unidades_o_articulos
+    filename = f"{os.path.splitext(filename)[0]}.txt"
     
     try:
         with open(filename, 'w', encoding='utf-8') as f:
@@ -120,10 +169,28 @@ def export_to_txt(content, filename):
     except Exception as e:
         print(f"Error al exportar a {filename}: {e}")
 
+def export_to_csv(content, filename):
+    # Filename with date-time to avoid overwriting
+    filename = filename.replace("razon social: ", "")
+    filename = filename.replace("fecha: ", "")
+    filename = filename.replace("factura: ", "")
+    filename = filename.replace(" ", "_")
+    filename = filename.replace("/", "-")
+    filename += "_importes"
+    filename = f"{os.path.splitext(filename)[0]}.csv"
+    
+    try:
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print(f"Exportado a: {filename}")
+    except Exception as e:
+        print(f"Error al exportar a {filename}: {e}")
 
 #Función principal para abrir y procesar el PDF
 
 def abrirPDF(nombre_archivo, modo=2):
+    resultadoImportes = []
+    resultadoArticulos = []
     """
     modo=1: solo factura original (primera página válida)
     modo=2: todas las páginas válidas
@@ -161,7 +228,11 @@ def abrirPDF(nombre_archivo, modo=2):
 
     documento.close()
     lineas = lineas_repetidas(lineas)
-    resultadoImportes = buscar_importes(lineas)
+    titulo = buscar_razon_social(lineas)
+    resultadoImportes = buscar_importes(lineas, "importes")
+    export_to_txt(str(resultadoImportes), titulo , "importes" )
+    resultadoArticulos = buscar_importes(lineas, "articulos")
+    export_to_txt(str(resultadoArticulos), titulo , "articulos" )
     return resultadoImportes
 
 def main_parsear(nombre_archivo):
@@ -178,7 +249,7 @@ def main_parsear(nombre_archivo):
         modo = 2
 
     resultado = abrirPDF(nombre_archivo, modo)
-    export_to_txt(str(resultado), "resultado.txt")
+
     delete_file(nombre_archivo, ".")
     if not resultado:
         print("No se encontraron resultados o hubo un error al procesar el PDF.")
@@ -187,5 +258,8 @@ def main_parsear(nombre_archivo):
 
 
 if __name__ == "__main__":
-    main_parsear()
-
+    try:
+        nombre_archivo = input("Ingrese nombre archivo: ")
+        main_parsear(nombre_archivo)
+    except Exception as e:
+        print(f"Error en la ejecución: {e}")
