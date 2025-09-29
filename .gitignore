@@ -12,6 +12,9 @@ facturas.zip
 credentials.json
 token.json
 
+# Allow the .env template in config directory
+!config/.env
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
