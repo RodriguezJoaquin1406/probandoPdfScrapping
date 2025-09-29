@@ -8,3 +8,5 @@ langchain-openai
 python-dotenv
 pydantic
 duckduckgo-search
+
+gspread

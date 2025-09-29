@@ -72,6 +72,7 @@ def buscar_importes(lineas, modo):
     
     for i, linea in enumerate(lineas):
         resultadoBusqueda = encontrar_importes(linea)
+        
         if resultadoBusqueda == -1:
             continue
             
@@ -92,7 +93,7 @@ def buscar_importes(lineas, modo):
                 monto = lineas[i+1].texto.replace(" $", "")
                 if monto != "0,00":
                     resultados.append({
-                        "tipo": "IVA",
+                        "tipo": "IVA", 
                         "razon": razon,
                         "monto": monto
                     })
@@ -108,7 +109,6 @@ def buscar_importes(lineas, modo):
                     "total_iva": lineas[i+5].texto
                 })
 
-    resultados = eliminar_repetidos(resultados)
     return resultados
 
 def  encontrar_razon_social(linea):
@@ -124,50 +124,39 @@ def  encontrar_razon_social(linea):
     return a
 
 def buscar_razon_social(lineas, modo):
-    if(modo == "texto"):
-        resultado= ""
-    elif(modo == "diccionario"):
-        resultado = []
-
+    # Crear un único diccionario para toda la información
+    resultado = {
+        "razon_social": "",
+        "fecha": "",
+        "tipo_documento": "",
+        "codigo_comprobante": "",
+        "importe_neto": "",
+        "iva_porcentaje": "",
+        "iva_monto": "",
+        "importe_total": ""
+    }
+    
     encontroFactura = False
     for i, linea in enumerate(lineas):
         resultadoBusqueda = encontrar_razon_social(linea)
         if resultadoBusqueda == -1:
             continue
+            
         if resultadoBusqueda == 1:  # Razon Social
             if i + 1 < len(lineas):
-                razon = lineas[i+1].texto
-                if(modo == "texto"):
-                    resultado += "razon social:" + " " + razon
-                elif(modo == "diccionario"):
-                    resultado.append({"razon " : razon})
+                resultado["razon_social"] = lineas[i+1].texto.strip()
+                
         elif resultadoBusqueda == 2:  # Caract Facturas
             if i + 1 < len(lineas):
                 if not encontroFactura:
-                    fecha = lineas[i+3].texto
+                    resultado["fecha"] = lineas[i+3].texto.strip()
                     encontroFactura = True
-                    if(modo == "texto"):
-                        resultado += "fecha:" + " " + fecha
-                    elif(modo == "diccionario"):
-                        resultado.append({"fecha " : fecha})
-        
                 else:
-                    if encontroFactura == True:
-                        tipoDocumento = lineas[i+1].texto
-                        tipoFactura = lineas[i+2].texto
-                        codigoFactura = lineas[i-4].texto
-                        if(modo == "texto"):
-                            factura = tipoDocumento
-                            factura += " "
-                            factura += tipoFactura.upper()
-                            factura += " "
-                            factura += codigoFactura
-                            resultado += "documento: " + " " + factura
-                        elif(modo == "diccionario"):
-                            Factura = tipoDocumento + " " + tipoFactura
-                            resultado.append({"Tipo " : Factura,
-                                            "Codigo-Comp" : codigoFactura 
-                                            })
+                    if encontroFactura:
+                        tipo_documento = lineas[i+1].texto.strip()
+                        tipo_factura = lineas[i+2].texto.strip().upper()
+                        resultado["tipo_documento"] = f"{tipo_documento} {tipo_factura}"
+                        resultado["codigo_comprobante"] = lineas[i-4].texto.strip()
 
     return resultado
 
@@ -205,6 +194,25 @@ def export_to_txt(content, filename, unidades_o_articulos, formato):
         print(f"Error al exportar a {filename}: {e}.{formato}")
 
 
+
+def procesar_factura(resultadoLineas):
+    # Obtener datos básicos
+    datos_basicos = buscar_razon_social(resultadoLineas, "diccionario")
+    
+    # Obtener importes
+    importes = buscar_importes(resultadoLineas, "importes")
+    
+    # Obtener artículos
+    articulos = buscar_importes(resultadoLineas, "articulos")
+    
+    # Crear estructura final para exportar
+    datos_factura = {
+        "datos_basicos": datos_basicos,
+        "importes": importes,
+        "articulos": articulos
+    }
+    
+    return datos_factura
 
 #Función principal para abrir y procesar el PDF
 
@@ -269,29 +277,10 @@ def main_parsear(nombre_archivo):
         modo = 2
 
     resultadoLineas = abrirPDF(nombre_archivo, modo)
-
-    titulo = buscar_razon_social(resultadoLineas, "texto")
-    resultadoImportes = buscar_razon_social(resultadoLineas, "diccionario")
-    resultadoImportes += buscar_importes(resultadoLineas, "importes")
-    export_to_txt(str(resultadoImportes), titulo , "importes", "txt" )
-    resultadoArticulos = buscar_importes(resultadoLineas, "articulos")
-    export_to_txt(str(resultadoArticulos), titulo , "articulos" , "txt")
-
-    print("titulo: ",titulo)
-    print("\n")
-    print("Resultado importes: ",resultadoImportes)
-    print("\n")
-    print("Resultado importes: ",resultadoArticulos)
-
-
-
-    delete_file(nombre_archivo, ".")
-    if(not resultadoArticulos):
-        print("No se encontraron resultados o hubo un error al procesar el PDF.")
-        return
+    resultadoFinal = procesar_factura(resultadoLineas)
     
+    return resultadoFinal
 
-    # print(*resultado, sep="\n")
 
 
 if __name__ == "__main__":
