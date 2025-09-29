@@ -69,39 +69,47 @@ def encontrar_importes(linea):
 
 def buscar_importes(lineas, modo):
     resultados = []
+    
     for i, linea in enumerate(lineas):
         resultadoBusqueda = encontrar_importes(linea)
         if resultadoBusqueda == -1:
             continue
+            
         if resultadoBusqueda == 1 and modo == "importes":  # Importe
             if i + 1 < len(lineas):
                 razon = linea.texto.replace("importe ", "").replace(" $", "")
                 monto = lineas[i+1].texto.replace(" $", "")
                 if monto != "0,00":
-                    resultados.append("Importe" + " " + razon + " " + "Monto:" + " " + monto)
+                    resultados.append({
+                        "tipo": "Importe",
+                        "razon": razon,
+                        "monto": monto
+                    })
+                    
         elif resultadoBusqueda == 2 and modo == "importes":  # IVA
             if i + 1 < len(lineas):
                 razon = linea.texto.replace("iva ", "").replace(" $", "")
                 monto = lineas[i+1].texto.replace(" $", "")
                 if monto != "0,00":
-                    resultados.append("IVA" + " " + razon + " " + "Monto:" + " " + monto)
+                    resultados.append({
+                        "tipo": "IVA",
+                        "razon": razon,
+                        "monto": monto
+                    })
+                    
         elif resultadoBusqueda == 3 and modo == "articulos":  # Artículos
             if i >= 2 and i + 5 < len(lineas):
-                producto = lineas[i-2].texto
-                cantidad = lineas[i-1].texto
-                precioUnitario = lineas[i+1].texto
-                subtotal = lineas[i+3].texto
-                totaliva = lineas[i+5].texto
-                resultados.append(
-                    "Articulo:" + " " +  producto + " " +
-                    "Cantidad:" + " " + cantidad + " " +
-                    "Precio_Unitario:" + " " + precioUnitario + " " +
-                    "Subtotal:" + " " + subtotal + " " +
-                    "TotalIVA:" + " " + totaliva
-                )
+                resultados.append({
+                    "tipo": "Articulo",
+                    "producto": lineas[i-2].texto,
+                    "cantidad": lineas[i-1].texto,
+                    "precio_unitario": lineas[i+1].texto,
+                    "subtotal": lineas[i+3].texto,
+                    "total_iva": lineas[i+5].texto
+                })
+
     resultados = eliminar_repetidos(resultados)
     return resultados
-
 
 def  encontrar_razon_social(linea):
     a = -1
@@ -153,7 +161,7 @@ def delete_file(filename, directory):
         print(f"Error al eliminar {filename}: {e}")
 
 def export_to_txt(content, filename, unidades_o_articulos, formato):
-    # Filename with date-time to avoid overwriting
+    # Limpiar texto extraido del pdf
     filename = filename.replace("razon social: ", "")
     filename = filename.replace("fecha: ", "")
     filename = filename.replace("factura: ", "")
