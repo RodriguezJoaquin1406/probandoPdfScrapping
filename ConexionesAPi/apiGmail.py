@@ -1,9 +1,6 @@
 ## Api para gmail
 from __future__ import print_function
 import os.path
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
@@ -15,6 +12,9 @@ from email import policy
 from email.parser import BytesParser
 from typing import List, Tuple
 import base64
+
+# Importar el manejador de credenciales
+from config import CredentialsManager
 
 def get_plain_body(msg):
     parts = msg['payload'].get('parts', [])
@@ -71,41 +71,29 @@ def download_attachments(msg, service, save_dir='.'):
             print(f"Descargado: {filename}")
     return filename
 
-# If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
-
-
 def main_correos():
   """Shows basic usage of the Gmail API.
   Lists the user's Gmail labels.
   """
-  creds = None
-  # The file token.json stores the user's access and refresh tokens, and is
-  # created automatically when the authorization flow completes for the first
-  # time.
-  if os.path.exists("token.json"):
-    creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-  # If there are no (valid) credentials available, let the user log in.
-  if not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-      creds.refresh(Request())
-    else:
-      flow = InstalledAppFlow.from_client_secrets_file(
-          "credentials.json", SCOPES
-      )
-      creds = flow.run_local_server(port=0)
-    # Save the credentials for the next run
-    with open("token.json", "w") as token:
-      token.write(creds.to_json())
-
+  # Inicializar el manejador de credenciales
+  credentials_manager = CredentialsManager()
+  
   try:
+    # Obtener credenciales usando el manejador centralizado
+    creds = credentials_manager.get_gmail_credentials()
+    
+    if not creds:
+      print("No se pudieron obtener las credenciales de Gmail")
+      return None
+
     service = build("gmail", "v1", credentials=creds)
     results = service.users().labels().list(userId="me").execute()
 
     facturas = []
 
-    # Get mails from a specific sender
-    query = "from:ertsyvler@gmail.com"
+    # Get mails from a specific sender using configured sender
+    sender = credentials_manager.get_gmail_query_sender()
+    query = f"from:{sender}"
     results = service.users().messages().list(userId="me", q=query).execute()
     messages = results.get("messages", [])
     print(f"Messages  {query}:")
@@ -146,6 +134,10 @@ def main_correos():
   except HttpError as error:
     # TODO(developer) - Handle errors from gmail API.
     print(f"An error occurred: {error}")
+  except Exception as error:
+    # Handle other errors (like credential errors)
+    print(f"An error occurred: {error}")
+    return None
 
 
 if __name__ == "__main__":
