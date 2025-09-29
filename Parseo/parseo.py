@@ -122,31 +122,55 @@ def  encontrar_razon_social(linea):
         if regex.search(texto):
             return codigo
     return a
+def buscar_razon_social(lineas, modo):
+    if modo == "texto":
+        resultado = ""
+    elif modo == "diccionario":
+        resultado = {
+            "razon_social": "",
+            "fecha": "",
+            "tipo_documento": "",
+            "tipo_factura": "",
+            "codigo_comprobante": ""
+        }
 
-def buscar_razon_social(lineas):
-    resultado= ""
     encontroFactura = False
     for i, linea in enumerate(lineas):
         resultadoBusqueda = encontrar_razon_social(linea)
         if resultadoBusqueda == -1:
             continue
+
         if resultadoBusqueda == 1:  # Razon Social
             if i + 1 < len(lineas):
                 razon = lineas[i+1].texto
-                resultado += "razon social:" + " " + razon
+                if modo == "texto":
+                    resultado += "razon social: " + razon
+                elif modo == "diccionario":
+                    resultado["razon_social"] = razon
+
         elif resultadoBusqueda == 2:  # Caract Facturas
             if i + 1 < len(lineas):
                 if not encontroFactura:
                     fecha = lineas[i+3].texto
                     encontroFactura = True
-                    resultado += "fecha:" + " " + fecha
-        
+                    if modo == "texto":
+                        resultado += "fecha: " + fecha
+                    elif modo == "diccionario":
+                        resultado["fecha"] = fecha
+                
                 else:
-                    if encontroFactura == True:
-                        factura = lineas[i+2].texto
-                        factura += " "
-                        factura += lineas[i-4].texto
-                        resultado += "factura:" + " " + factura
+                    if encontroFactura:
+                        tipoDocumento = lineas[i+1].texto
+                        tipoFactura = lineas[i+2].texto
+                        codigoFactura = lineas[i-4].texto
+                        
+                        if modo == "texto":
+                            factura = f"{tipoDocumento} {tipoFactura.upper()} {codigoFactura}"
+                            resultado += "documento: " + factura
+                        elif modo == "diccionario":
+                            resultado["tipo_documento"] = tipoDocumento
+                            resultado["tipo_factura"] = tipoFactura
+                            resultado["codigo_comprobante"] = codigoFactura
 
     return resultado
 
@@ -164,9 +188,12 @@ def export_to_txt(content, filename, unidades_o_articulos, formato):
     # Limpiar texto extraido del pdf
     filename = filename.replace("razon social: ", "")
     filename = filename.replace("fecha: ", "")
-    filename = filename.replace("factura: ", "")
+    filename = filename.replace("factura A", "")
+    filename = filename.replace("documento: ", "")
     filename = filename.replace(" ", "_")
     filename = filename.replace("/", "-")
+    filename = filename.replace(":", "")
+
     filename += "_" + unidades_o_articulos
     if(formato == "txt"):
         filename = f"{os.path.splitext(filename)[0]}.txt"
@@ -246,13 +273,21 @@ def main_parsear(nombre_archivo):
 
     resultadoLineas = abrirPDF(nombre_archivo, modo)
 
-    titulo = buscar_razon_social(resultadoLineas)
+    titulo = buscar_razon_social(resultadoLineas, "texto")
     resultadoImportes = buscar_importes(resultadoLineas, "importes")
+    resultadoImportes += buscar_razon_social(resultadoLineas, "diccionario")
     export_to_txt(str(resultadoImportes), titulo , "importes", "txt" )
     resultadoArticulos = buscar_importes(resultadoLineas, "articulos")
     export_to_txt(str(resultadoArticulos), titulo , "articulos" , "txt")
 
-    
+    print("titulo: ",titulo)
+    print("\n")
+    print("Resultado importes: ",resultadoImportes)
+    print("\n")
+    print("Resultado importes: ",resultadoArticulos)
+
+
+
     delete_file(nombre_archivo, ".")
     if(not resultadoArticulos):
         print("No se encontraron resultados o hubo un error al procesar el PDF.")
