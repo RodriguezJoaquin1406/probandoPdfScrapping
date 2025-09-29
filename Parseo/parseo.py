@@ -122,55 +122,52 @@ def  encontrar_razon_social(linea):
         if regex.search(texto):
             return codigo
     return a
+
 def buscar_razon_social(lineas, modo):
-    if modo == "texto":
-        resultado = ""
-    elif modo == "diccionario":
-        resultado = {
-            "razon_social": "",
-            "fecha": "",
-            "tipo_documento": "",
-            "tipo_factura": "",
-            "codigo_comprobante": ""
-        }
+    if(modo == "texto"):
+        resultado= ""
+    elif(modo == "diccionario"):
+        resultado = []
 
     encontroFactura = False
     for i, linea in enumerate(lineas):
         resultadoBusqueda = encontrar_razon_social(linea)
         if resultadoBusqueda == -1:
             continue
-
         if resultadoBusqueda == 1:  # Razon Social
             if i + 1 < len(lineas):
                 razon = lineas[i+1].texto
-                if modo == "texto":
-                    resultado += "razon social: " + razon
-                elif modo == "diccionario":
-                    resultado["razon_social"] = razon
-
+                if(modo == "texto"):
+                    resultado += "razon social:" + " " + razon
+                elif(modo == "diccionario"):
+                    resultado.append({"razon " : razon})
         elif resultadoBusqueda == 2:  # Caract Facturas
             if i + 1 < len(lineas):
                 if not encontroFactura:
                     fecha = lineas[i+3].texto
                     encontroFactura = True
-                    if modo == "texto":
-                        resultado += "fecha: " + fecha
-                    elif modo == "diccionario":
-                        resultado["fecha"] = fecha
-                
+                    if(modo == "texto"):
+                        resultado += "fecha:" + " " + fecha
+                    elif(modo == "diccionario"):
+                        resultado.append({"fecha " : fecha})
+        
                 else:
-                    if encontroFactura:
+                    if encontroFactura == True:
                         tipoDocumento = lineas[i+1].texto
                         tipoFactura = lineas[i+2].texto
                         codigoFactura = lineas[i-4].texto
-                        
-                        if modo == "texto":
-                            factura = f"{tipoDocumento} {tipoFactura.upper()} {codigoFactura}"
-                            resultado += "documento: " + factura
-                        elif modo == "diccionario":
-                            resultado["tipo_documento"] = tipoDocumento
-                            resultado["tipo_factura"] = tipoFactura
-                            resultado["codigo_comprobante"] = codigoFactura
+                        if(modo == "texto"):
+                            factura = tipoDocumento
+                            factura += " "
+                            factura += tipoFactura.upper()
+                            factura += " "
+                            factura += codigoFactura
+                            resultado += "documento: " + " " + factura
+                        elif(modo == "diccionario"):
+                            Factura = tipoDocumento + " " + tipoFactura
+                            resultado.append({"Tipo " : Factura,
+                                            "Codigo-Comp" : codigoFactura 
+                                            })
 
     return resultado
 
@@ -274,8 +271,8 @@ def main_parsear(nombre_archivo):
     resultadoLineas = abrirPDF(nombre_archivo, modo)
 
     titulo = buscar_razon_social(resultadoLineas, "texto")
-    resultadoImportes = buscar_importes(resultadoLineas, "importes")
-    resultadoImportes += buscar_razon_social(resultadoLineas, "diccionario")
+    resultadoImportes = buscar_razon_social(resultadoLineas, "diccionario")
+    resultadoImportes += buscar_importes(resultadoLineas, "importes")
     export_to_txt(str(resultadoImportes), titulo , "importes", "txt" )
     resultadoArticulos = buscar_importes(resultadoLineas, "articulos")
     export_to_txt(str(resultadoArticulos), titulo , "articulos" , "txt")
