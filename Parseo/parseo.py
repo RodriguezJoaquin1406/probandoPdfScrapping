@@ -152,7 +152,7 @@ def delete_file(filename, directory):
     except Exception as e:
         print(f"Error al eliminar {filename}: {e}")
 
-def export_to_txt(content, filename, unidades_o_articulos):
+def export_to_txt(content, filename, unidades_o_articulos, formato):
     # Filename with date-time to avoid overwriting
     filename = filename.replace("razon social: ", "")
     filename = filename.replace("fecha: ", "")
@@ -160,37 +160,23 @@ def export_to_txt(content, filename, unidades_o_articulos):
     filename = filename.replace(" ", "_")
     filename = filename.replace("/", "-")
     filename += "_" + unidades_o_articulos
-    filename = f"{os.path.splitext(filename)[0]}.txt"
+    if(formato == "txt"):
+        filename = f"{os.path.splitext(filename)[0]}.txt"
+    elif(formato == "csv"):
+        filename = f"{os.path.splitext(filename)[0]}.csv"
     
     try:
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(content)
         print(f"Exportado a: {filename}")
     except Exception as e:
-        print(f"Error al exportar a {filename}: {e}")
+        print(f"Error al exportar a {filename}: {e}.{formato}")
 
-def export_to_csv(content, filename):
-    # Filename with date-time to avoid overwriting
-    filename = filename.replace("razon social: ", "")
-    filename = filename.replace("fecha: ", "")
-    filename = filename.replace("factura: ", "")
-    filename = filename.replace(" ", "_")
-    filename = filename.replace("/", "-")
-    filename += "_importes"
-    filename = f"{os.path.splitext(filename)[0]}.csv"
-    
-    try:
-        with open(filename, 'w', encoding='utf-8') as f:
-            f.write(content)
-        print(f"Exportado a: {filename}")
-    except Exception as e:
-        print(f"Error al exportar a {filename}: {e}")
+
 
 #Función principal para abrir y procesar el PDF
 
 def abrirPDF(nombre_archivo, modo=2):
-    resultadoImportes = []
-    resultadoArticulos = []
     """
     modo=1: solo factura original (primera página válida)
     modo=2: todas las páginas válidas
@@ -228,14 +214,16 @@ def abrirPDF(nombre_archivo, modo=2):
 
     documento.close()
     lineas = lineas_repetidas(lineas)
-    titulo = buscar_razon_social(lineas)
-    resultadoImportes = buscar_importes(lineas, "importes")
-    export_to_txt(str(resultadoImportes), titulo , "importes" )
-    resultadoArticulos = buscar_importes(lineas, "articulos")
-    export_to_txt(str(resultadoArticulos), titulo , "articulos" )
-    return resultadoImportes
+
+    if not lineas:
+        print("No se encontraron líneas válidas en el PDF.")
+        return []
+    
+
+    return lineas
 
 def main_parsear(nombre_archivo):
+    resultadoLineas = []
     print("¿Qué desea procesar?")
     print("1. Solo la factura original (primera página válida)")
     print("2. Todas las páginas válidas")
@@ -248,13 +236,22 @@ def main_parsear(nombre_archivo):
         print("Entrada inválida, se usará 'todas las páginas'")
         modo = 2
 
-    resultado = abrirPDF(nombre_archivo, modo)
+    resultadoLineas = abrirPDF(nombre_archivo, modo)
 
+    titulo = buscar_razon_social(resultadoLineas)
+    resultadoImportes = buscar_importes(resultadoLineas, "importes")
+    export_to_txt(str(resultadoImportes), titulo , "importes", "txt" )
+    resultadoArticulos = buscar_importes(resultadoLineas, "articulos")
+    export_to_txt(str(resultadoArticulos), titulo , "articulos" , "txt")
+
+    
     delete_file(nombre_archivo, ".")
-    if not resultado:
+    if(not resultadoArticulos):
         print("No se encontraron resultados o hubo un error al procesar el PDF.")
         return
-    print(*resultado, sep="\n")
+    
+
+    # print(*resultado, sep="\n")
 
 
 if __name__ == "__main__":
